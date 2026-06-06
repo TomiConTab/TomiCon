@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfilador Fiscal</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-light: #eceaff;
+            --bg: #f8f9fd;
+            --text: #2d3436;
+            --border: #dfe6e9;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 550px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* BARRA DE PROGRESO */
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .step-count {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #eee;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 20%;
+            transition: width 0.4s ease;
+        }
+
+        /* TEXTOS */
+        h2 { margin: 0 0 10px 0; color: #1e272e; font-size: 24px; letter-spacing: -0.5px; }
+        p { color: #636e72; font-size: 15px; margin-bottom: 25px; line-height: 1.5; }
+
+        /* DISEÑO DE OPCIONES (TIPO TARJETA) */
+        .grid-options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .custom-radio input {
+            display: none;
+        }
+
+        .radio-tile {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .radio-tile:hover {
+            border-color: #b2bec3;
+            transform: translateY(-2px);
+        }
+
+        .custom-radio input:checked + .radio-tile {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+        }
+
+        .radio-icon { font-size: 20px; margin-right: 15px; }
+        .radio-label { font-weight: 600; font-size: 15px; }
+
+        /* INPUTS */
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+            background: #fdfdfd;
+        }
+
+        input:focus { border-color: var(--primary); background: white; }
+        label.input-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        .field-group { margin-bottom: 20px; }
+
+        /* BOTONES */
+        .button-group { display: flex; gap: 12px; margin-top: 20px; }
+        
+        button {
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .btn-next { background: var(--primary); color: white; flex: 1; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); }
+        .btn-next:hover { background: #5b4bc4; transform: translateY(-1px); }
+        .btn-prev { background: white; color: #636e72; border: 2px solid var(--border); flex: 0.4; }
+        .btn-prev:hover { background: #f1f2f6; }
+
+        /* CONTROL DE PASOS */
+        .form-step { display: none; animation: slideUp 0.4s ease; }
+        .form-step.active { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="progress-header">
+        <div class="step-count">Paso <span id="step-num">1</span> de 5</div>
+    </div>
+    <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+
+    <form id="kontaForm">
+        
+        <div class="form-step active" id="step1">
+            <h2>Vamos a empezar</h2>
+            <p>Selecciona cómo quieres registrarte:</p>
+            <div class="grid-options">
+                <label class="custom-radio">
+                    <input type="radio" name="tipo_persona" value="fisica" checked>
+                    <div class="radio-tile">
+                        <span class="radio-icon">👤</span>
+                        <span class="radio-label">Persona Física</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="tipo_persona" value="moral">
+                    <div class="radio-tile">
+                        <span class="radio-icon">🏢</span>
+                        <span class="radio-label">Persona Moral (Empresa)</span>
+                    </div>
+                </label>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-next" onclick="validateStep1()">Continuar</button>
+            </div>
+        </div>
+
+        <div class="form-step" id="step2">
+            <h2>Tu Situación</h2>
+            <p>Elige la opción que mejor te describa:</p>
+            <div class="grid-options">
+                <label class="custom-radio">
+                    <input type="radio" name="situacion" value="emprendedor_sin" checked>
+                    <div class="radio-tile">
+                        <span class="radio-icon">🚀</span>
+                        <span class="radio-label">Emprendedor SIN alta en SAT</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="situacion" value="emprendedor_con">
+                    <div class="radio-tile">
+                        <span class="radio-icon">💼</span>
+                        <span class="radio-label">Emprendedor CON alta en SAT</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="situacion" value="venta_bien">
+                    <div class="radio-tile">
+                        <span class="radio-icon">🏠</span>
+                        <span class="radio-label">Vendí casa o auto</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="situacion" value="salarios">
+                    <div class="radio-tile">
+                        <span class="radio-icon">💰</span>
+                        <span class="radio-label">Salarios / Asalariado</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="situacion" value="regularizacion">
+                    <div class="radio-tile">
+                        <span class="radio-icon">⚠️</span>
+                        <span class="radio-label">Necesito Regularizarme</span>
+                    </div>
+                </label>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-prev" onclick="goToStep(1)">Atrás</button>
+                <button type="button" class="btn-next" onclick="validateStep2()">Continuar</button>
+            </div>
+        </div>
+
+        <div class="form-step" id="step3-actividad">
+            <h2>Tu Negocio</h2>
+            <p>¿Cuál es tu actividad principal?</p>
+            <div class="grid-options">
+                <label class="custom-radio">
+                    <input type="radio" name="giro" value="comercio" checked>
+                    <div class="radio-tile">
+                        <span class="radio-icon">🛍️</span>
+                        <span class="radio-label">Comercio / Tienda</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="giro" value="servicios">
+                    <div class="radio-tile">
+                        <span class="radio-icon">👨‍💻</span>
+                        <span class="radio-label">Servicios Profesionales</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="giro" value="agapes">
+                    <div class="radio-tile">
+                        <span class="radio-icon">🚜</span>
+                        <span class="radio-label">Agricultura / Ganadería / Pesca</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="giro" value="arrendamiento">
+                    <div class="radio-tile">
+                        <span class="radio-icon">🔑</span>
+                        <span class="radio-label">Arrendamiento (Rentas)</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="giro" value="plataformas">
+                    <div class="radio-tile">
+                        <span class="radio-icon">📱</span>
+                        <span class="radio-label">Plataformas (Uber, Airbnb)</span>
+                    </div>
+                </label>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-prev" onclick="goToStep(2)">Atrás</button>
+                <button type="button" class="btn-next" onclick="goToStep('step4-efirma')">Continuar</button>
+            </div>
+        </div>
+
+        <div class="form-step" id="step3-regularizacion">
+            <h2>El Problema</h2>
+            <p>¿Qué necesitas resolver?</p>
+            <div class="grid-options">
+                <label class="custom-radio">
+                    <input type="radio" name="problema" value="declaraciones" checked>
+                    <div class="radio-tile">
+                        <span class="radio-icon">📅</span>
+                        <span class="radio-label">Declaraciones pendientes</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="problema" value="opinion">
+                    <div class="radio-tile">
+                        <span class="radio-icon">🚫</span>
+                        <span class="radio-label">Opinión Negativa SAT</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="problema" value="baja">
+                    <div class="radio-tile">
+                        <span class="radio-icon">📉</span>
+                        <span class="radio-label">Baja de Obligaciones</span>
+                    </div>
+                </label>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-prev" onclick="goToStep(2)">Atrás</button>
+                <button type="button" class="btn-next" onclick="goToStep('step4-efirma')">Continuar</button>
+            </div>
+        </div>
+
+        <div class="form-step" id="step4-efirma">
+            <h2>Tu e.firma</h2>
+            <p>Es indispensable para casi todo trámite.</p>
+            <div class="grid-options">
+                <label class="custom-radio">
+                    <input type="radio" name="efirma" value="vigente" checked>
+                    <div class="radio-tile">
+                        <span class="radio-icon">✅</span>
+                        <span class="radio-label">Sí, está vigente</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="efirma" value="vencida">
+                    <div class="radio-tile">
+                        <span class="radio-icon">⌛</span>
+                        <span class="radio-label">La tengo pero venció</span>
+                    </div>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" name="efirma" value="no_tengo">
+                    <div class="radio-tile">
+                        <span class="radio-icon">❌</span>
+                        <span class="radio-label">Nunca la he tramitado</span>
+                    </div>
+                </label>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-prev" onclick="handleBackToStep3()">Atrás</button>
+                <button type="button" class="btn-next" onclick="goToStep(5)">Continuar</button>
+            </div>
+        </div>
+
+        <div class="form-step" id="step5">
+            <h2>¡Casi listo!</h2>
+            <p>¿A dónde te enviamos tu perfil fiscal?</p>
+            
+            <div class="field-group">
+                <label class="input-label">Correo Electrónico</label>
+                <input type="email" id="email" placeholder="nombre@ejemplo.com">
+            </div>
+            
+            <div class="field-group">
+                <label class="input-label">WhatsApp</label>
+                <input type="text" id="tel" placeholder="993 000 0000">
+            </div>
+
+            <div id="msg-moral" style="display:none; margin-bottom: 20px; background: #fff4e6; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9f43;">
+                <small style="color: #d35400;">🏢 Nota: Al ser Persona Moral, un especialista revisará tu caso manualmente.</small>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-prev" onclick="goToStep('step4-efirma')">Atrás</button>
+                <button type="submit" class="btn-next">Ver Resultados</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    let currentFlow = ''; 
+
+    function updateProgress(stepNum) {
+        const totalSteps = 5;
+        const percentage = (stepNum / totalSteps) * 100;
+        document.getElementById('progress-fill').style.width = percentage + '%';
+        document.getElementById('step-num').innerText = stepNum;
+    }
+
+    function goToStep(stepId) {
+        document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+        
+        let targetId = '';
+        let stepNum = 1;
+
+        if (typeof stepId === 'number') {
+            targetId = 'step' + stepId;
+            stepNum = stepId;
+        } else {
+            targetId = stepId;
+            if(stepId.includes('step3')) stepNum = 3;
+            if(stepId.includes('step4')) stepNum = 4;
+            if(stepId.includes('step5')) stepNum = 5;
+        }
+
+        document.getElementById(targetId).classList.add('active');
+        updateProgress(stepNum);
+    }
+
+    function validateStep1() {
+        const tipo = document.querySelector('input[name="tipo_persona"]:checked').value;
+        if (tipo === 'moral') {
+            currentFlow = 'moral';
+            document.getElementById('msg-moral').style.display = 'block';
+            goToStep(5); 
+        } else {
+            currentFlow = 'fisica';
+            document.getElementById('msg-moral').style.display = 'none';
+            goToStep(2);
+        }
+    }
+
+    function validateStep2() {
+        const sit = document.querySelector('input[name="situacion"]:checked').value;
+        
+        if (sit.includes('emprendedor')) {
+            // Emprendedor va a la lista de actividades (ahora con Agapes)
+            currentFlow = 'emprendedor';
+            goToStep('step3-actividad');
+        } else if (sit === 'regularizacion') {
+            currentFlow = 'regularizacion';
+            goToStep('step3-regularizacion');
+        } else {
+            // Venta de bien y Salarios van directo a e.firma
+            currentFlow = 'directo';
+            goToStep('step4-efirma');
+        }
+    }
+
+    function handleBackToStep3() {
+        if (currentFlow === 'emprendedor') goToStep('step3-actividad');
+        else if (currentFlow === 'regularizacion') goToStep('step3-regularizacion');
+        else if (currentFlow === 'directo') goToStep(2);
+        else if (currentFlow === 'moral') goToStep(1);
+    }
+
+    document.getElementById('kontaForm').onsubmit = (e) => {
+        e.preventDefault();
+        alert('Información enviada correctamente.');
+    };
+</script>
+
+</body>
+</html>
